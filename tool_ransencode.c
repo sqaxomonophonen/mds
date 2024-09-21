@@ -1,4 +1,4 @@
-// cc -Wall ransencode.c -o ransencode
+// cc -Wall tool_ransencode.c -o tool_ransencode
 
 #include <stdio.h>
 #include <stdlib.h>

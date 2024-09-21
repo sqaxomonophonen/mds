@@ -1,7 +1,7 @@
 // base-123 118-bit decoder => rANS decoder
 
-// See/use b123n118encode.js and ransencode.c to build strings that this code
-// can decode.
+// See/use tool_b123n118encode.js and tool_ransencode.c to build strings that
+// this code can decode.
 
 // RE: "base-123 118-bit":
 //   Math.log2(123**17) = 118.02274659076708
@@ -26,7 +26,7 @@
 
 // The rANS decoder was ported into JS from rans_byte.h (functions ported:
 // RansDecInit(), RansDecGet() and RansDecAdvance()). rans_byte.h is also used
-// in the rANS encoder (ransencode.c)
+// in the rANS encoder (tool_ransencode.c)
 
 // Usage:
 //   Y=Y("... your data here ...");

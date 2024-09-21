@@ -53,6 +53,6 @@ condjsc miniplayer_audioworklet
 
 condjsc b123n118ransdecoder
 
-# TODO
-#./text2ransinput.js 14 javascript_symboldefs.json dearplayer.min.js _js.symtab.json _js.symlist.txt
-# ./gen_javascript_decoder.js _js.symtab.json
+# ./tool_text2ransinput.js 14 javascript_symboldefs.json dearplayer.min.js __js.symtab.json __js.symlist.txt
+# ./tool_gen_javascript_decoder.js __js.symtab.json __js.prelude.bin __decoder.js
+# uglifyjs __decoder.js --rename --compress --mangle > __decoder.min.js

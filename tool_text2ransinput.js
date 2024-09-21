@@ -10,7 +10,7 @@ if (process.argv.length !== 7) {
 	console.log("   <symbodefs.json>      Path to JSON list of symbol definitions (see: javascript_symboldefs.json)");
 	console.log("   <input text>          Input text to analyze and turn into symbol list");
 	console.log("   <output.symtab.json>  JSON output: symbol count and list of [<string>,<freq>] pairs");
-	console.log("   <output.symlist.txt>  ransencode.c input (start/freq pairs)");
+	console.log("   <output.symlist.txt>  ./tool_ransencode input (start/freq pairs)");
 	process.exit(1);
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 if len(sys.argv) != 2:
-	sys.stderr.write("Usage: %s <input>" % sys.argv[0])
+	sys.stderr.write("Usage: %s <input>\n" % sys.argv[0])
 	sys.exit(1)
 bins = [0]*256
 for b in open(sys.argv[1],"rb").read():

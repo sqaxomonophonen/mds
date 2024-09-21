@@ -8,9 +8,9 @@ Stage 0:
  - Decoder is "left open" for stage 1+
 Tool chain:
  - text2ransinput.js: given symbol definitions and text input, it generates
-   symbol list for ransencode.c and
- - ransencode.c: encodes symbol list to binary
- - b123n118encode.js encodes binary data as a base-123 118-bit string
+   symbol list for tool_ransencode.c and
+ - tool_ransencode.c: encodes symbol list to binary
+ - tool_b123n118encode.js encodes binary data as a base-123 118-bit string
 
 Stage 1:
  - Contains player and song code

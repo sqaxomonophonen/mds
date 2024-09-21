@@ -64,7 +64,7 @@ fs.writeFileSync(process.argv[3], prelude);
 let js = "";
 const W = (line) => js+=(line+"\n");
 
-W("(_=>{");
+W("eval((_=>{");
 W("  let v,m,i,c=0,");
 W("  tbl=[],");
 W("  strs=\"" + strings.map(x=>x[0]).join("\x01") + "\".split(\"\x01\"),");
@@ -93,7 +93,7 @@ W("    m = tbl[X()];");
 W("    c += m<ns ? strs[m] : String.fromCharCode(32+m-ns);");
 W("    X(start[m],freq[m]);");
 W("  }");
-W("  eval(c);");
-W("})();");
+W("  return c;");
+W("})());");
 
 fs.writeFileSync(process.argv[4], js);
