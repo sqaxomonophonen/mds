@@ -17,7 +17,7 @@
 // Input is read 17 characters at a time, or: one 17-digit base-123 value at a
 // time. This is just enough to siphon 118 bits, which are buffered and
 // converted into output bytes. So in terms of data density it's only:
-//   base-122.88597591741355  (2**(118/17)
+//   base-122.88597591741355  (2**(118/17))
 // "17" was chosen to minimize the fractional part. The first digit count that
 // offers a smaller fractional part is "52":
 //   Math.log2(123**52)=361.0107542776405
