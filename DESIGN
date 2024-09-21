@@ -1,0 +1,19 @@
+
+
+Stage 0:
+ - Contains golfed base-123 118-bit decoder => rANS decoder (see:
+   b123n118ransdecoder.js)
+ - JavaScript ("Stage 1") is decoded from the first input section and evaluted.
+   Edit javascript_symboldefs.json to compress recurring substrings better.
+ - Decoder is "left open" for stage 1+
+Tool chain:
+ - text2ransinput.js: given symbol definitions and text input, it generates
+   symbol list for ransencode.c and
+ - ransencode.c: encodes symbol list to binary
+ - b123n118encode.js encodes binary data as a base-123 118-bit string
+
+Stage 1:
+ - Contains player and song code
+ - Continues to decode/decompress input stream to read pattern data, PCM data,
+   and/or what it needs
+ - 

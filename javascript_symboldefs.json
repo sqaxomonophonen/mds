@@ -1,0 +1,18 @@
+[
+	{"pragma":"stripcc"},
+	"Float32Array(",
+	".length",
+	"Math.",
+	"null",
+	"for(",
+	"let ",
+	"var ",
+	"if(",
+	"100",
+	"&&",
+	"==",
+	"++",
+	"=>",
+	");",
+	{"expand":"ascii"}
+]
