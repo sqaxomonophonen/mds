@@ -9,7 +9,7 @@
 // except for these 5 which would otherwise have to be escaped (unwanted
 // because it requires 2+ bytes for 1 digit):
 //   name   esc    idx
-//   NUL   "\x00"    0 (technically valid in JS, but not in HTML?)
+//   NUL   "\x00"    0 (valid in JS, but not in HTML?)
 //   LF    "\n"     10
 //   CR    "\r"     13
 //   "     "\""     34
@@ -21,7 +21,7 @@
 // "17" was chosen to minimize the fractional part. The first digit count that
 // offers a smaller fractional part is "52":
 //   Math.log2(123**52)=361.0107542776405
-// To see if it makes a positive difference try changing "17n" to "52n" and
+// To see if it makes a noticeable difference try changing "17n" to "52n" and
 // "118n" to "361n"
 
 // The rANS decoder was ported into JS from rans_byte.h (functions ported:
@@ -34,22 +34,21 @@
 //   X()            => returns cumulative frequency for current symbol (corresponds to RansDecGet())
 //   X(start,freq)) => advance to next symbol (corresponds to RansDecAdvance())
 
+// base-123 118-bit => byte stream decoder. `input` length must be a multiple
+// of 17. returns a "pull_byte()" function that returns the next byte in the
+// stream when called.
 Y=(input) => {
-	let input_index = 0;
-	return _ => ((code) => code-1-(code>10)-(code>13)-(code>34)-(code>92))(input.charCodeAt(input_index++));
-};
-X=(scale_bits,pull_base123) => {
-	let i,
+	let
+	input_index = 0,
 	byte_buffer = [],
 	bit_buffer = [],
-	input_index = 0,
-	tmp0,
-	byt,
-	pull_byte = _=>{
+	i, code, tmp0;
+	return _=>{
 		if (!byte_buffer.length) {
 			tmp0 = 0n;
 			for (i=0n; i<17n; i++) { // XXX(MAGIC)(stride=17)
-				tmp0 += BigInt(pull_base123()) * (123n ** i); // XXX(MAGIC)(base=123)
+				code = input.charCodeAt(input_index++);
+				tmp0 += BigInt(code-1-(code>10)-(code>13)-(code>34)-(code>92)) * (123n ** i); // XXX(MAGIC)(base=123)
 			}
 			for (i=0n; i<118n; i++) bit_buffer.push((tmp0 >> i) & 1n); // XXX(MAGIC)(bits/stride=118)
 			while (bit_buffer.length > 7) {
@@ -59,21 +58,24 @@ X=(scale_bits,pull_base123) => {
 			}
 		}
 		return byte_buffer.shift();
-	},
-	mask = (1<<scale_bits)-1,
-	rans_state=0
-	;
+	};
+};
 
-	// rANS decoder
-	for(let i=0;i<32;i+=8) rans_state += pull_byte() << i;
+// rANS decoder; `pull_byte` is what `Y()` returns. `scale_bits` is the number
+// of frequency bits
+X=(scale_bits,pull_byte) => {
+	// the bit-wise operations in JS work as /signed/ 32-bit integer
+	// operations, e.g. 1<<31 = -2147483648; expressions that could produce
+	// negative values were rewritten to avoid this; shifts are turned into
+	// multiplications or divisions; bitwise-or is turned into addition.
+	let
+	mask = (1<<scale_bits)-1,
+	rans_state=0,
+	i;
+	for(i=1;i<(1<<25);i*=256) rans_state += pull_byte()*i; // rewritten: used "<<" and "|"
 	return (start,freq)=>{
 		if (start === undefined) return rans_state & mask;
-		// carefully rewritten to avoid negative values (e.g. in JS:
-		// 1<<31===-2147483648)
-		//  - (rans_state>>scale_bits)       =>   ((rans_state/(mask+1))|0)
-		//  - (rans_state<<8) | pull_byte()  =>   (rans_state * 256) + pull_byte()
-		// NOTE (rans_state & mask) is safe
-		rans_state = freq * ((rans_state/(mask+1))|0) + (rans_state & mask) - start;
-		while (rans_state < (1<<23)) rans_state = (rans_state * 256) + pull_byte();
+		rans_state = freq * ((rans_state/(mask+1))|0) + (rans_state & mask) - start; // rewritten: used "rans_state>>scale_bits"
+		while (rans_state < (1<<23)) rans_state = (rans_state * 256) + pull_byte(); // rewritten: used "rans_state<<8" and "|"
 	}
 }
