@@ -36,6 +36,7 @@ Y=(input) => {
 			}
 		}
 		return byte_buffer.shift();
+		//const b = byte_buffer.shift();console.log(b);return b;
 	};
 };
 

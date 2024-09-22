@@ -121,6 +121,8 @@ for (let e of symbol_list) {
 	symboltxt += st.start + " " + st.freq + "\n";
 }
 
+console.log(symbol_list.length, "symbols from", input.length, "bytes");
+
 // write symtab.json
 fs.writeFileSync(process.argv[5], JSON.stringify({
 	n_symbols: symbol_list.length,

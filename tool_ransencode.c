@@ -32,10 +32,11 @@ int main(int argc, char** argv)
 	int n_symbols = 0;
 	while (fscanf(in, "%d %d\n", &start, &freq) == 2) {
 		pp->start = start;
-		pp->freq = start;
+		pp->freq = freq;
 		pp++;
 		n_symbols++;
 	}
+	fclose(in);
 
 	const size_t buffer_size = 1<<20;
 	uint8_t* buffer = malloc(buffer_size);
@@ -46,13 +47,14 @@ int main(int argc, char** argv)
 	RansEncInit(&rans);
 	for (int i = 0; i < n_symbols; i++) {
 		RansEncSymbol esym = {0};
-		RansEncSymbolInit(&esym, pairs[i].start, pairs[i].freq, scale_bits);
+		pp--;
+		RansEncSymbolInit(&esym, pp->start, pp->freq, scale_bits);
 		RansEncPutSymbol(&rans, &ptr, &esym);
 	}
+	assert(pp == pairs);
 	RansEncFlush(&rans, &ptr);
 	const size_t encsize = buffer_end - ptr;
 	printf("%d symbols, %zd bytes\n", n_symbols, encsize);
-	fclose(in);
 
 	FILE* out = fopen(argv[3], "wb");
 	if (out == NULL) {
