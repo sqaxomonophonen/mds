@@ -67,12 +67,10 @@ while (cursor < input.length) {
 		symbol_stats[symbol_index] = {
 			str:str,
 			hits:0,
-			weight:0,
 			freq:0,
 		};
 	}
 	symbol_stats[symbol_index].hits++;
-	symbol_stats[symbol_index].weight += symbol_stats[symbol_index].str.length;
 	if (symbol_index > max_symbol_index) max_symbol_index = symbol_index;
 }
 
@@ -86,7 +84,7 @@ for (let vote = 0; vote < (1 << scale_bits); vote++) {
 		const stats = symbol_stats[symidx];
 		if (!stats) continue;
 		if (divisors[symidx] === undefined) divisors[symidx] = 1;
-		const q = stats.weight / divisors[symidx];
+		const q = stats.hits / divisors[symidx];
 		if (best_q === undefined || q > best_q) {
 			best_q = q;
 			best_symidx = symidx;
