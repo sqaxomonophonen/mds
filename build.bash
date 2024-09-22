@@ -119,5 +119,5 @@ assemble_93() {
 	assemble b93d13n85 b93n85decoder.min.js '<!DOCTYPE html><title>compliance!</title>' $*
 }
 
-assemble_252 dearplayer.build.js song33.js
+#assemble_252 dearplayer.build.js song33.js
 #assemble_93 dearplayer.build.js song33.js

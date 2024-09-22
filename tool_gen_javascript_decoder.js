@@ -66,6 +66,7 @@ SPLITTER="Z";
 assert(strings.map(x=>x[0]).join("").indexOf(SPLITTER) === -1);
 
 W("eval((_=>{");
+//W("console.log((_=>{");
 W("  let v,m,i,c=0,");
 W("  tbl=[],");
 W("  strs=\"" + strings.map(x=>x[0]).join(SPLITTER) + "\".split(\""+SPLITTER+"\"),");
@@ -74,33 +75,25 @@ W("  n=ns+95,");
 W("  M=128,");
 W("  start=[],freq=[]");
 W("  ;");
-//W("  let counter = 0;"); // DBG
 W("  for(i=0;i<n;i++){");
 W("    v=0;m=1;");
 W("    while(1){");
 W("      let d=Y();");
-//W("      console.log(d, counter++);"); // DBG
-//W("      counter++;"); // DBG
 W("      v+=m*(d&127);");
 W("      if(d<M) break;");
 W("      m*=M;");
 W("    }");
 W("    start[i]=c;");
-W("    freq[i]=m;");
+W("    freq[i]=v;");
 W("    for(m=0;m<v;m++){");
 W("      tbl[c++]=i;");
 W("    }");
 W("  }");
-//W("  if (c !== (1<<"+symtab.scale_bits+")) throw new Error('XXX');");
-//W("  console.log(counter);"); // DBG
-//W("  console.log(tbl);"); // DBG
 W("  c=\"\";");
-//W("  for(let i=0;i<20;i++) console.log('B',Y().toString(16));");
 W("  X=X("+symtab.scale_bits+",Y);");
 W("  for(i=0;i<"+symtab.n_symbols+";i++){");
 W("    m = tbl[X()];");
 W("    c += m<ns ? strs[m] : String.fromCharCode(32+m-ns);");
-W("    if (i == 20) console.log(c);"); // DBG
 W("    X(start[m],freq[m]);");
 W("  }");
 W("  return c;");
