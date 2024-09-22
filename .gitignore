@@ -3,3 +3,4 @@
 tool_ransencode
 .*swp
 __*
+tmp/

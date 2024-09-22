@@ -1,4 +1,2 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/sh
 rm -vf *.min.js *.build.js tool_ransencode __*
-

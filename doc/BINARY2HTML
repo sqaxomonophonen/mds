@@ -1,0 +1,55 @@
+
+===============================================================================
+
+BASE-93 is all 128 ASCII characters in order, except:
+     #  NAME              REASON
+  0-31  Control chars     All except the following 3 disallowed in HTML5:
+     9  TAB               Valid, but rejected. See below.
+    10  LF                Must be escaped in Javascript
+    13  CR                Must be escaped in Javascript
+    34  "                 Must be escaped in Javascript
+    92  \                 Must be escaped in Javascript
+   127  DEL               Not allowed in HTML5
+
+BASE-94 is also possible by including TAB (9), however, if I'm already wasting
+space on standards-compliance, then I also like the idea of being able to
+restore the source code from a printout. Assuming the font is monospace, and
+that the distinction between "1", "i", "I", "|", "l" and "!" is unambiguous :)
+
+===============================================================================
+
+BASE-252 is all 256 ISO-8859-1 characters in order, except:
+     #  NAME              REASON
+    10  LF                Must be escaped in Javascript
+    13  CR                Must be escaped in Javascript
+    34  "                 Must be escaped in Javascript
+    92  \                 Must be escaped in Javascript
+Many control codes in the range are subject to remappings, e.g. 128 in
+ISO-8859-1 becomes 8364 when read by .charCodeAt() in JavaScript. See:
+https://html.spec.whatwg.org/multipage/parsing.html#numeric-character-reference-end-state
+ISO-8859-1 seems to be the 8-bit character set that requires the fewest
+remappings, because the first 256 unicode codepoints are essentially
+ISO-8859-1?
+
+===============================================================================
+
+Calculate efficiency for a given combination of base and digit count:
+
+  EFF = (base,n_digits) => [Math.log2(base)/8, Math.log2(2**(Math.floor(Math.log2(base**n_digits))/n_digits)) / Math.log2(base), Math.floor(Math.log2(base**n_digits))]
+
+Returns a tuple: `[8bit_eff,base_eff,n_bits]`, where:
+
+  `8bit_eff` is [0;1] for how efficient it is in comparinson to bits per byte
+  `base_eff` is [0;1] for how efficient it is in comparinson to log2(base) bits per byte
+  `n_bits` how many bits are extracted per `n_digits`
+
+Sweet spot for standards-compliant/printable base-93:
+> EFF(93,13)
+[ 0.8173948513885039, 0.999893369672364, 85 ]
+
+Sweet spot for rules-breaking base-252:
+> EFF(252,44)
+[ 0.9971599904374896, 0.9999990979096561, 351 ]
+
+===============================================================================
+

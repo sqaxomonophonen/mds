@@ -51,7 +51,8 @@ condjsc miniplayer_audioworklet
 #depsmini="miniplayer.js miniplayer_audioworklet.js"
 #minifact=miniplayer.build.js
 
-condjsc b123n118ransdecoder
+condjsc b93n85decoder
+condjsc b252n351decoder
 
 # ./tool_text2ransinput.js 14 javascript_symboldefs.json dearplayer.min.js __js.symtab.json __js.symlist.txt
 # ./tool_gen_javascript_decoder.js __js.symtab.json __js.prelude.bin __decoder.js
