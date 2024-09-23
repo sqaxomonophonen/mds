@@ -11,7 +11,7 @@ function get_split() {
 	return G_SPLIT;
 }
 
-function crunch(name, orig, prefixes) {
+function crunch(what, orig, prefixes) {
 	let tokens = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~@";
 	let split_pos = tokens.indexOf(get_split());
 	if (split_pos >= 0) {
@@ -52,17 +52,12 @@ function crunch(name, orig, prefixes) {
 		}
 		prev_ratio = ratio;
 	}
-	console.error(name, "compression:", ratio, "( without dictionary:" , w.length/orig.length, ")");
+	console.error(what, "compression:", ratio, "( without dictionary:" , w.length/orig.length, ")");
 	return [w, pairs.join(get_split())];
 }
 
 const clean_html = s => s.replace(/<!--[\s\S]*?-->/g, ''); // remove HTML comments
 const clean_css  = s => s.replace(/\/\*[\s\S]*?\*\//g, ''); // remove CSS comments
-
-function load(path) {
-	return fs.readFileSync(path,'utf-8');
-}
-
 
 module.exports = {
 	set_split,
@@ -70,5 +65,4 @@ module.exports = {
 	crunch,
 	clean_html,
 	clean_css,
-	load,
 };

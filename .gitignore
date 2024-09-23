@@ -1,6 +1,6 @@
 *.min.js
 *.build.js
-tool_ransencode
+ransencode
 .*swp
 __*
 tmp/
