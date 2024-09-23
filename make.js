@@ -8,6 +8,7 @@ const child_process = require("child_process");
 const PREFIX = "song_";
 const SCALE_BITS = 14; // TODO overrideable?
 const JS_LONG_SYMBOL_SPLITTER = "Z"; // must not be found in any of the long symbols
+const MINIFY = true;
 
 process.chdir(__dirname);
 
@@ -140,7 +141,8 @@ function minify(source) {
 }
 
 function compile(source) {
-	return 1 ? minify(source) : source;
+	return MINIFY ? minify(source) : source;
+	//return MINIFY ? minify(source) : source.replaceAll("\n","").replaceAll("\r","").replaceAll("\t","");
 }
 
 function compile_path(p) {
@@ -403,7 +405,7 @@ function make_bootstrap(n_symbols, sym_freq_pairs) {
 	};
 }
 
-function bin2txtish(input) {
+function bin_to_js_str(input) {
 	let bit_array = [];
 	for (let i0 = 0; i0 < input.length; i0++) {
 		const b = input.charCodeAt(i0);
@@ -416,7 +418,7 @@ function bin2txtish(input) {
 	let bit_cursor = 0;
 	let byte_cursor = 0;
 
-	const BASE   = BigInt(codec.base); 
+	const BASE   = BigInt(codec.base);
 	const DIGITS = BigInt(codec.digits);
 	const BITS   = BigInt(codec.bits);
 
@@ -440,7 +442,7 @@ function bin2txtish(input) {
 
 const bootstrap = make_bootstrap(rans.n_symbols, rans.sym_freq_pairs);
 
-let txtish = bin2txtish(bootstrap.prelude + rans_bin);
+let txtish = bin_to_js_str(bootstrap.prelude + rans_bin);
 let html_source = "";
 html_source += codec.html_header;
 html_source += "<script>";
