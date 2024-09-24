@@ -12,7 +12,7 @@ P=(sample_rate, n_channels, n_frames, song_text, main_color)=>{
 	;
 
 	win.onload=_=>{
-		let worklet_node, audio_ctx, gain_node, playing, set_pos,
+		let worklet_node, audio_ctx, gain_node, was_playing, playing, set_pos,
 		    analyser_node, analyser_data, cctx,
 		    gain = 1 ,
 		    set_gain_node_gain = _=>{ if (gain_node) { gain_node.gain.value = (Math.pow(3,gain)-1)/(3-1); } },
@@ -165,6 +165,7 @@ P=(sample_rate, n_channels, n_frames, song_text, main_color)=>{
 		set_pos(0);
 		setmdown(t0,_=>{
 			drag_state = 1;
+			was_playing = playing;
 			set_playing(0);
 			scrub();
 		});
@@ -179,6 +180,7 @@ P=(sample_rate, n_channels, n_frames, song_text, main_color)=>{
 			if (drag_state==2) volum();
 		};
 		win.onmouseup=_=>{
+			if (drag_state==1) set_playing(was_playing);
 			drag_state = 0;
 		};
 		setmdown(sp,_=>{
