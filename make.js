@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 const ujs = require("uglify-js");
 const fs = require("fs");
 const path = require("path");
@@ -6,9 +7,9 @@ const assert = require("node:assert").strict;
 const child_process = require("child_process");
 
 const PREFIX = "song_";
-const SCALE_BITS = 14; // TODO overrideable?
+const SCALE_BITS = 14; // TODO configurable?
 const JS_LONG_SYMBOL_SPLITTER = "Z"; // must not be found in any of the long symbols
-const MINIFY = true;
+const MINIFY = true; // TODO configurable? but something fails at runtime with MINIFY=false; haven't figured it out yet
 
 process.chdir(__dirname);
 
@@ -131,11 +132,14 @@ if (!player) {
 
 const read_text = (path) => fs.readFileSync(path, "utf-8");
 
-function minify(source) {
-	const s = ujs.minify(source,{
+function minify(source, opt) {
+	opt = opt || {};
+	const mopts = {
 		mangle: true,
 		compress: {},
-	}).code;
+	};
+	if (opt.expression) mopts.expression = true;
+	const s = ujs.minify(source, mopts).code;
 	assert(s !== undefined, "BAD SOURCE: " + source);
 	return s;
 }
@@ -143,6 +147,10 @@ function minify(source) {
 function compile(source) {
 	return MINIFY ? minify(source) : source;
 	//return MINIFY ? minify(source) : source.replaceAll("\n","").replaceAll("\r","").replaceAll("\t","");
+}
+
+function compile_expression(source) {
+	return MINIFY ? minify(source,{expression:true}) : source;
 }
 
 function compile_path(p) {
@@ -154,10 +162,32 @@ const out = song.load({
 	read: (p) => read_text(path.join(song.dirname,p)),
 });
 
+const i2id = (() => {
+	const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	const n = alphabet.length;
+	return (index) => {
+		assert(index >= 0);
+		for (let n_digits = 1; n_digits <= 3; n_digits++) {
+			if (index >= (n**n_digits)) continue;
+			let s = "";
+			let ri = index;
+			for (let i = 0; i < n_digits; i++) {
+				s += alphabet[ri % n];
+				ri = (ri/n)|0;
+			}
+			return s;
+		}
+		throw new Error("BAD INDEX");
+	};
+})();
 
-function resolve(source) {
+const i2Zid = (index) => "Z"+i2id(index);
+
+const strip_js_comments = (src) => src.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+function enumerate_tags(source) {
 	let cursor = 0;
-	let replaces = [];
+	let tags = [];
 	for (;;) {
 		let at = source.slice(cursor).indexOf("@");
 		if (at === -1) break;
@@ -168,39 +198,140 @@ function resolve(source) {
 		let p1 = source.slice(p0).indexOf(")");
 		assert(p1 != -1);
 		p1 += p0;
+
 		const typ   = source.slice(at+1,p0);
-		const ident = source.slice(p0+1,p1);
-		console.log(at,p0,p1,"["+typ+"]","["+ident+"]");
-
-		let replace = null;
-		switch (typ) {
-		case "DEF":
-			if (ident === "PI") {
-				replace = Math.PI.toFixed(5);
-			} else {
-				throw new Error("unhandled ident: " + ident);
-			}
-			break;
-		default: throw new Error("unhandled typ: " + typ);
-		}
-
-		assert(replace !== null);
-
-		replaces.push([at,p1,replace]);
+		const body = source.slice(p0+1,p1);
+		//const key = source.slice(at,p1+1);
+		tags.push([typ,body,at,p1+1])
 
 		cursor = p1;
 	}
-
-	for (let i = replaces.length-1; i >= 0; i--) {
-		let [ o0,o1,s ] = replaces[i];
-		source = source.slice(0,o0)+s+source.slice(o1+1);
-	}
-
-	return source;
-
+	return tags;
 }
 
-let song_source = compile(resolve(out.source));
+const mk_tag_key = (tuple) => tuple[0] + "\x00" + tuple[1];
+
+const mk_kit_path = (kit) => path.join("kit", kit+".js");
+
+function resolve(source) {
+	let rec0, rec0kit;
+	let visited_kits = {};
+	let key_hits = {};
+	let key_tag_map = {};
+	rec0 = (source) => {
+		source = strip_js_comments(source);
+		const tags = enumerate_tags(source);
+		for (const tag of tags) {
+			const key = mk_tag_key(tag);
+			key_tag_map[key] = tag;
+			if (key_hits[key] === undefined) key_hits[key] = 0;
+			key_hits[key]++;
+			if (tag[0] === "KIT") {
+				rec0kit(tag[1]);
+			}
+		}
+	};
+	rec0kit = (kit) => {
+		if (visited_kits[kit]) return;
+		visited_kits[kit] = true;
+		rec0(read_text(mk_kit_path(kit)));
+	};
+	rec0(source);
+
+	let common_key_pairs = [];
+	let do_inline_key = {};
+	for (const key of Object.keys(key_hits)) {
+		const hits = key_hits[key];
+		if (hits === 1) {
+			do_inline_key[key] = true;
+		} else {
+			assert(hits > 1);
+			common_key_pairs.push([key, hits]);
+		}
+	}
+
+	// stable sort by hits, so that most commonly used globals get the
+	// shorter names
+	common_key_pairs.sort((a,b) => {
+		const d0 = b[1]-a[1];
+		if (d0 !== 0) return d0;
+		return (a[0]>b[0]) - (a[0]<b[0]);
+	});
+
+	const common_keys = common_key_pairs.map(x=>x[0]);
+
+	// assign shared identifier to keys with more than one instance
+	let common_key_shared_ident={}, seq=0;
+	for (const key of common_keys) {
+		common_key_shared_ident[key] = i2Zid(seq++);
+	}
+
+	let rec1, rec1tag;
+	kit_source_cache = {};
+	rec1 = (source) => {
+		source = strip_js_comments(source);
+		const tags = enumerate_tags(source);
+		tags.reverse();
+		for (const tag of tags) {
+			const key = mk_tag_key(tag);
+			const [typ,body,start,end] = tag;
+			let replacement = common_key_shared_ident[key];
+			if (replacement === undefined) {
+				assert(do_inline_key[key]);
+				replacement = rec1tag(tag);
+			}
+			assert(replacement);
+			source = source.slice(0,start) + replacement + source.slice(end);
+		}
+		return source;
+	};
+	rec1tag = (tag) => {
+		const [typ,body,start,end] = tag;
+		switch (typ) {
+		case "DEF": {
+			const ident = body;
+			switch (ident) {
+			case "PI": return Math.PI.toFixed(5);
+			case "SR": return (44100).toString();
+			default: assert(!"unhandled ident: " + ident);
+			}
+		}	break;
+		case "KIT": {
+			const kit = body;
+			if (!kit_source_cache[kit]) {
+				kit_source_cache[kit] = rec1(read_text(mk_kit_path(kit)));
+			}
+			const source = kit_source_cache[kit];
+			assert(source);
+			return source;
+		}	break;
+		case "PCM": {
+			const ident = body;
+			assert(!"TODO PCM " + body);
+		}	break;
+		case "PAT": {
+			const ident = body;
+			assert(!"TODO PAT " + ident);
+		}	break;
+		case "GEN": {
+			const ident = body;
+			assert(!"TODO GEN " + ident);
+		}	break;
+		default: assert(!"unhandled typ:" + typ);
+		}
+	};
+
+	let r = "";
+	for (const key of common_keys) {
+		r += common_key_shared_ident[key] + "=" + rec1tag(key_tag_map[key]) + ";\n";
+	}
+	r += rec1(source);
+
+	return r;
+}
+
+let song_source = resolve(out.source);
+song_source = compile(song_source);
 //console.log(song_source);
 
 const decoder_source = compile_path(codec.decoder);
@@ -356,7 +487,7 @@ function rr2bin(rr) {
 	return out;
 }
 
-const stage1_source = player_src + song_source;
+let stage1_source = player_src + song_source;
 const rans = js2rans(stage1_source);
 const rans_bin = rr2bin(rans.rans_ranges_txt);
 

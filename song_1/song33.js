@@ -12,9 +12,11 @@
 	    X
 	    ;
 
-	// XXX resolver test
-	let pi = @DEF(PI);
-	console.log("pi",pi);
+	// XXX resolver tests
+	console.log("PIIIII", @DEF(PI)); // shared global constant due to 2+ hits
+	console.log("PIIIII", @DEF(PI));
+	console.log("rate?", @DEF(SR)); // inlined
+	console.log("gain", @KIT(gain_node)); // kit/gain_node.js
 
 	X = () => {
 		if (remaining-- <= 0) return;
@@ -32,6 +34,6 @@
 		}
 		push(xs);
 		setTimeout(X,10);
-	}
+	};
 	X();
 })();
