@@ -154,7 +154,54 @@ const out = song.load({
 	read: (p) => read_text(path.join(song.dirname,p)),
 });
 
-const song_source = compile(out.source);
+
+function resolve(source) {
+	let cursor = 0;
+	let replaces = [];
+	for (;;) {
+		let at = source.slice(cursor).indexOf("@");
+		if (at === -1) break;
+		at += cursor;
+		let p0 = source.slice(at).indexOf("(");
+		assert(p0 != -1);
+		p0 += at;
+		let p1 = source.slice(p0).indexOf(")");
+		assert(p1 != -1);
+		p1 += p0;
+		const typ   = source.slice(at+1,p0);
+		const ident = source.slice(p0+1,p1);
+		console.log(at,p0,p1,"["+typ+"]","["+ident+"]");
+
+		let replace = null;
+		switch (typ) {
+		case "DEF":
+			if (ident === "PI") {
+				replace = Math.PI.toFixed(5);
+			} else {
+				throw new Error("unhandled ident: " + ident);
+			}
+			break;
+		default: throw new Error("unhandled typ: " + typ);
+		}
+
+		assert(replace !== null);
+
+		replaces.push([at,p1,replace]);
+
+		cursor = p1;
+	}
+
+	for (let i = replaces.length-1; i >= 0; i--) {
+		let [ o0,o1,s ] = replaces[i];
+		source = source.slice(0,o0)+s+source.slice(o1+1);
+	}
+
+	return source;
+
+}
+
+let song_source = compile(resolve(out.source));
+//console.log(song_source);
 
 const decoder_source = compile_path(codec.decoder);
 

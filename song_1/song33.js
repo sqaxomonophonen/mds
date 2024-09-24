@@ -12,6 +12,10 @@
 	    X
 	    ;
 
+	// XXX resolver test
+	let pi = @DEF(PI);
+	console.log("pi",pi);
+
 	X = () => {
 		if (remaining-- <= 0) return;
 		let xs = new Float32Array(CHUNK_FRAMES*N_CHANNELS);
