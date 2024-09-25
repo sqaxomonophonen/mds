@@ -67,7 +67,7 @@ function build(api) {
 		".style.",
 		".innerHTML",
 		".on",
-		"new ",
+		//"new ", // probably not worth it
 		//'.length', // this is too common; handle via outer compressor?
 	]);
 

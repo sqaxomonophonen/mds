@@ -11,6 +11,36 @@ const SCALE_BITS = 14; // TODO configurable?
 const JS_LONG_SYMBOL_SPLITTER = "Z"; // must not be found in any of the long symbols
 const MINIFY = true; // TODO configurable? but something fails at runtime with MINIFY=false; haven't figured it out yet
 
+const JS_LONG_SYMBOLS = [
+	"new Float32Array(",
+	"continue",
+	".length",
+	".slice(",
+	".fill(",
+	"void 0",
+	"return",
+	"Math.",
+	"break",
+	".set(",
+	"null",
+	"for(",
+	"else",
+	"let ",
+	"var ",
+	"if(",
+	"100",
+	"cos",
+	"sin",
+	"=>",
+	"&&",
+	"==",
+	"+=",
+	"-=",
+	"++",
+	"--",
+	");",
+];
+
 process.chdir(__dirname);
 
 const ID_WIDTH = 10;
@@ -46,12 +76,12 @@ let codec_map = {};
 [
 	{
 		id:"b252",
-		desc:"Rules-breaking, base-252, 44 digits => 351 bits, rANS stream",
+		desc:"Rules-breaking, base-252, 351 bits per 44 digits (7.98 bits/digit), rANS stream",
 		decoder: codec_path("b252n351decoder.js"),
 		html_header: '<meta charset="ISO-8859-1">',
-		base: 252,
+		base:   252,
 		digits: 44,
-		bits: 351,
+		bits:   351,
 		encode_digit: (digit) => {
 			assert(0 <= digit && digit < 252);
 			return digit + (digit>(10-1)) + (digit>(13-2)) + (digit>(34-3)) + (digit>(92-4));
@@ -60,11 +90,12 @@ let codec_map = {};
 	{
 		id:"b93",
 		desc:"Standards-compliant/printable, base-93, 13 digits => 85 bits, rANS stream",
+		desc:"Standards-compliant/printable, base-93, 85 bits per 13 digits (6.54 bits/digit), rANS stream",
 		decoder: codec_path("b93n85decoder.js"),
 		html_header: '<!DOCTYPE html><title>-</title>',
-		base: 93,
+		base:   93,
 		digits: 13,
-		bits: 85,
+		bits:   85,
 		encode_digit: (digit) => {
 			assert(0 <= digit && digit < 93);
 			return 32 + digit + (digit>(34-33)) + (digit>(92-34));
@@ -332,7 +363,7 @@ function resolve(source) {
 
 let song_source = resolve(out.source);
 song_source = compile(song_source);
-//console.log(song_source);
+console.log(song_source);
 
 const decoder_source = compile_path(codec.decoder);
 
@@ -446,28 +477,8 @@ function text2rans(stripcc, long_symbols, input) {
 	};
 }
 
-const js_long_symbols = [
-	"Float32Array(",
-	"gargergaergargarg",
-	".length",
-	"Math.",
-	"null",
-	"for(",
-	"let ",
-	"var ",
-	"if(",
-	"100",
-	"=>",
-	"&&",
-	"==",
-	"+=",
-	"-=",
-	"++",
-	");",
-];
-
 function js2rans(input) {
-	return text2rans(true, js_long_symbols, input);
+	return text2rans(true, JS_LONG_SYMBOLS, input);
 }
 
 function rr2bin(rr) {

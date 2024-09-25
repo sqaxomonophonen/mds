@@ -96,7 +96,8 @@ stolen from stb_hexwave.h (https://github.com/nothings/stb/blob/master/stb_hexwa
 			i,j,
 			num_samples = A.length,
 			recip_dt = 1/dt,
-			n_verts
+			n_verts,
+			pass
 			;
 
 			A.fill(0);
@@ -116,7 +117,7 @@ stolen from stb_hexwave.h (https://github.com/nothings/stb/blob/master/stb_hexwa
 				for (i=1;i<(n_verts-1);i++) {
 					if (time < verts[i][0]) break;
 				}
-				if (verts[i][2] != 0) blamp(output, 0, 0, (dt - prev_dt)*verts[i][2]);
+				if (verts[i][2] != 0) blamp(A, 0, 0, (dt - prev_dt)*verts[i][2]);
 				prev_dt = dt;
 			}
 
@@ -133,19 +134,17 @@ stolen from stb_hexwave.h (https://github.com/nothings/stb/blob/master/stb_hexwa
 				// two overlapping buffers, one the user's
 				// buffer and one a fixed-length temp buffer.
 
-				let i0,i1,out;
+				let i0=0,i1,out;
 				if (pass == 0) {
 					if (num_samples < width) continue;
 					// run as far as we can without
 					// overwriting the end of the user's
 					// buffer 
-					out = output;
-					i0 = 0;
+					out = A;
 					i1 = num_samples - width;
 				} else {
 					// generate the rest into a temp buffer
 					out = temp_output;
-					i0 = 0;
 					i1 = (num_samples >= width) ? width : num_samples;
 				}
 
@@ -183,7 +182,7 @@ stolen from stb_hexwave.h (https://github.com/nothings/stb/blob/master/stb_hexwa
 							let prev_v0 = verts[j][1]
 							verts = pending_verts;
 							if (verts[j][1] != prev_v0) {
-								blep(out, i, recip_dt*time,    (verts[j][1] - prev_v0));
+								blep(out, i, recip_dt*time, (verts[j][1] - prev_v0));
 							}
 							if (verts[j][2] != prev_s0) {
 								blamp(out, i, recip_dt*time, dt*(verts[j][2] - prev_s0));
@@ -199,11 +198,11 @@ stolen from stb_hexwave.h (https://github.com/nothings/stb/blob/master/stb_hexwa
 				// output, the second half will be the new
 				// start overlap
 				for (i=0; i < width; i++) {
-					output[num_samples - width + i] += temp_output[i];
+					A[num_samples - width + i] += temp_output[i];
 				}
 				buffer.set(temp_output.slice(width, width*2));
 			} else {
-				output.set(temp_output.slice(0,num_samples));
+				A.set(temp_output.slice(0,num_samples));
 				buffer.set(temp_output.slice(num_samples, num_samples + width));
 			}
 		};
