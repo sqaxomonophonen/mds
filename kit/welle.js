@@ -17,7 +17,7 @@ stolen from stb_hexwave.h (https://github.com/nothings/stb/blob/master/stb_hexwa
 		ramp = new Float32Array(n),
 		blep_buffer = new Float32Array(blep_buffer_count),
 		blamp_buffer = new Float32Array(blep_buffer_count),
-		i,j,tmp0,tmp1,tmp2,a0,a1
+		i,j,tmp0,tmp1,tmp2,a0=0,a1=0
 		;
 
 		// compute BLEP and BLAMP by integerating windowed sinc
@@ -74,16 +74,12 @@ stolen from stb_hexwave.h (https://github.com/nothings/stb/blob/master/stb_hexwa
 			lerpweight = time_since_transition * oversample - slot
 			;
 			for (i=0; i < width; i++) {
-				output[offset+i] += scale * (data[d1o+i] + (data[d2o+i]-data[d1oi])*lerpweight);
+				output[offset+i] += scale * (data[d1o+i] + (data[d2o+i]-data[d1o+i])*lerpweight);
 			}
 		},
-		blamp = (output, offset, time_since_transition, scale) => {
-			add_oversampled_bleplike(output, offset, time_since_transition, scale, blep_buffer);
-		},
-		blep = (output, offset, time_since_transition, scale) => {
-			add_oversampled_bleplike(output, offset, time_since_transition, scale, blamp_buffer);
-		},
-		verts = [],
+		blamp = (output, offset, time_since_transition, scale) => add_oversampled_bleplike(output, offset, time_since_transition, scale, blep_buffer),
+		blep = (output, offset, time_since_transition, scale) => add_oversampled_bleplike(output, offset, time_since_transition, scale, blamp_buffer),
+		verts,
 		pending_verts
 		;
 
@@ -113,7 +109,6 @@ stolen from stb_hexwave.h (https://github.com/nothings/stb/blob/master/stb_hexwa
 			n_verts = verts.length;
 
 			if (dt != prev_dt) {
-				i = 0;
 				for (i=1;i<(n_verts-1);i++) {
 					if (time < verts[i][0]) break;
 				}
