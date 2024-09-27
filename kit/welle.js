@@ -77,8 +77,12 @@ stolen from stb_hexwave.h (https://github.com/nothings/stb/blob/master/stb_hexwa
 				output[offset+i] += scale * (data[d1o+i] + (data[d2o+i]-data[d1o+i])*lerpweight);
 			}
 		},
-		blamp = (output, offset, time_since_transition, scale) => add_oversampled_bleplike(output, offset, time_since_transition, scale, blep_buffer),
-		blep = (output, offset, time_since_transition, scale) => add_oversampled_bleplike(output, offset, time_since_transition, scale, blamp_buffer),
+		blamp = (output, offset, time_since_transition, scale) => {
+			add_oversampled_bleplike(output, offset, time_since_transition, scale, blamp_buffer);
+		},
+		blep = (output, offset, time_since_transition, scale) => {
+			add_oversampled_bleplike(output, offset, time_since_transition, scale, blep_buffer);
+		},
 		verts,
 		pending_verts
 		;
