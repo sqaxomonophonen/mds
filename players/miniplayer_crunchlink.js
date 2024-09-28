@@ -4,21 +4,16 @@ function build(api) {
 
 	let [ aw, aw_pairs ] = lib.crunch("JS/WORKLET", api.compile("miniplayer_audioworklet.js"), [
 		'Processor',
-		//'.length', // this is too common; handle via outer compressor?
 		'this.',
 	]);
 
 	let [ player, player_pairs ] = lib.crunch("JS/MAIN", api.compile("miniplayer.js"), [
 		".innerHTML",
+		"visibility",
+		"Worklet",
 		"button",
 		".port.",
-		//".create",
-		//".connect",
-		//".style.",
-		//".on",
-
-		//"new ", // probably not worth it
-		//'.length', // this is too common; handle via outer compressor?
+		"on",
 	]);
 
 	let src = "";
