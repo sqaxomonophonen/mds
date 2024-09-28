@@ -106,14 +106,14 @@ hexwave_init() in stb_hexwave.h. this returns an object "o" with two "methods":
 				vert[j].t = reflect_flag ? 1 - vert[7-j].t  : 0.5 + vert[j-4].t;
 				vert[j].v = reflect_flag ?   - vert[7-j].v  :     - vert[j-4].v;
 			}
-			
+
 			for (j=0; j<8; j++) {
 				if (vert[j+1].t <= vert[j].t + (dt/256)) {
 					// if change takes place over less than a fraction of a sample treat as discontinuity
 					//
 					// otherwise the slope computation can blow up to arbitrarily large and we
 					// try to generate a huge BLAMP and the result is wrong.
-					// 
+					//
 					// why does this happen if the math is right? i believe if done perfectly,
 					// the two BLAMPs on either side of the slope would cancel out, but our
 					// BLAMPs have only limited sub-sample precision and limited integration
@@ -195,7 +195,7 @@ hexwave_init() in stb_hexwave.h. this returns an object "o" with two "methods":
 						if (num_samples < width) continue;
 						// run as far as we can without
 						// overwriting the end of the user's
-						// buffer 
+						// buffer
 						out = A;
 						i1 = num_samples - width;
 					} else {
