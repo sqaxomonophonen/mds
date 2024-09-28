@@ -363,7 +363,7 @@ function resolve(source) {
 
 let song_source = resolve(out.source);
 song_source = compile(song_source);
-console.log(song_source);
+console.log(song_source, song_source.length);
 
 const decoder_source = compile_path(codec.decoder);
 

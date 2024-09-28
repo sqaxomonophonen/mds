@@ -5,6 +5,7 @@ export is a function that takes (width,oversample), corresponding to
 hexwave_init() in stb_hexwave.h. this returns an object "o" with two "methods":
  o.c(reflect_flag, peak_time, half_height, zero_wait)  corresponds to: hexwave_change()
  o.g(xs,dt)                                            corresponds to: hexwave_generate_samples()
+hexwave defaults to a sawtooth wave
 */
 
 ((_=>{
@@ -17,13 +18,15 @@ hexwave_init() in stb_hexwave.h. this returns an object "o" with two "methods":
 	return ((width,oversample) => {
 		let halfwidth = (width/2)|0,
 		half = halfwidth*oversample,
-		blep_buffer_count = width*(oversample+1),
+		blep_buffer_size = width*(oversample+1),
 		n = 2*half+1,
 		step = new Float32Array(n),
 		ramp = new Float32Array(n),
-		blep_buffer = new Float32Array(blep_buffer_count),
-		blamp_buffer = new Float32Array(blep_buffer_count),
-		i,j,tmp0,tmp1,tmp2,a0=0,a1=0
+		blep_buffer = new Float32Array(blep_buffer_size),
+		blamp_buffer = new Float32Array(blep_buffer_size),
+		i,j,
+		tmp0,tmp1,tmp2,
+		a0=0,a1=0
 		;
 
 		// compute BLEP and BLAMP by integerating windowed sinc
@@ -33,8 +36,7 @@ hexwave_init() in stb_hexwave.h. this returns an object "o" with two "methods":
 				tmp1/*sinc*/ = (i==half) ? 1 : Math.sin(tmp0/*sinc_t*/) / tmp0/*sinc_t*/;
 				tmp0/*wt*/ = 2*@DEF(PI) * i / (n-1);
 				tmp2/*window*/ = (0.355768 - 0.487396*Math.cos(tmp0) + 0.144232*Math.cos(2*tmp0) - 0.012604*Math.cos(3*tmp0)); // Nuttall
-				tmp0/*value*/ = tmp2/*window*/ * tmp1/*sinc*/;
-				a0 += tmp0/16;
+				a0 += (tmp2/*window*/ * tmp1/*sinc*/)/16;
 				a1 += a0/16;
 			}
 			step[i] = a0;
@@ -43,8 +45,8 @@ hexwave_init() in stb_hexwave.h. this returns an object "o" with two "methods":
 
 		// renormalize
 		for (i=0;i<n;i++) {
-			step[i] = step[i] * (1 / step[n-1]); // step needs to reach to 1.0
-			ramp[i] = ramp[i] * (halfwidth / ramp[n-1]); // ramp needs to become a slope of 1.0 after oversampling
+			step[i] *= (1 / step[n-1]); // step needs to reach to 1.0
+			ramp[i] *= (halfwidth / ramp[n-1]); // ramp needs to become a slope of 1.0 after oversampling
 		}
 
 		// deinterleave to allow efficient interpolation e.g. w/SIMD
@@ -160,21 +162,21 @@ hexwave_init() in stb_hexwave.h. this returns an object "o" with two "methods":
 			g: (A,dt) => {
 				let i,j,
 				num_samples = A.length,
-				recip_dt = 1/dt,
+				recip_dt = dt?1/dt:0,
 				pass,
 				i1,out,
 				stop
 				;
 
-				A.fill(0);
-
 				generate_linesegs(dt);
 
+				A.fill(0);
+
 				if (dt != prev_dt) {
-					for (i=1;i<6;i++) {
-						if (time < vert[i].t) break;
+					for (j=1;j<6;j++) {
+						if (time < vert[j].t) break;
 					}
-					if (vert[i].s != 0) blamp(A, 0, 0, (dt - prev_dt)*vert[i].s);
+					if (vert[j].s != 0) blamp(A, 0, 0, (dt - prev_dt)*vert[j].s);
 					prev_dt = dt;
 				}
 
@@ -224,7 +226,7 @@ hexwave_init() in stb_hexwave.h. this returns an object "o" with two "methods":
 						if (stop) break;
 						// transition from lineseg starting at j to lineseg starting at j+1
 						if (vert[j].t == vert[j+1].t) {
-							blep(out, i, recip_dt*(time-vert[j+1].t), (vert[j+1].t - vert[j].t));
+							blep(out, i, recip_dt*(time-vert[j+1].t), (vert[j+1].v - vert[j].v));
 						}
 						blamp(out, i, recip_dt*(time-vert[j+1].t), dt*(vert[j+1].s - vert[j].s));
 						j++;
@@ -232,7 +234,7 @@ hexwave_init() in stb_hexwave.h. this returns an object "o" with two "methods":
 						if (j == 8) {
 							// change to different waveform if there's a change pending
 							j = 0;
-							time -= 1; // time was >= 1.f if j==8
+							time -= 1; // time was >= 1 if j==8
 							if (pending) {
 								//let prev_s0 = vert[j].s;
 								//let prev_v0 = vert[j]>v;
