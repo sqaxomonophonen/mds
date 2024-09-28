@@ -27,6 +27,6 @@ registerProcessor("a", class extends AudioWorkletProcessor {
 			position++;
 		}
 		this.p = position;
-		return true;
+		return true; // NOTE firefox accepts 1, chrome doesn't
 	}
 });

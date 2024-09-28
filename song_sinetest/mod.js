@@ -9,6 +9,6 @@ const load = (api) => {
 
 module.exports = {
 	dirname: __dirname,
-	name: "1 (one?)",
+	name: "sinetest",
 	load: load,
 };
