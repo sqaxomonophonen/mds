@@ -46,7 +46,7 @@ function crunch(what, orig, prefixes) {
 		pairs.push(token+prefix);
 		w=w.replaceAll(prefix,token);
 		ratio = get_ratio();
-		if (ratio > prev_ratio) {
+		if (ratio >= prev_ratio) {
 			console.error("WARNING: prefix does not seem to compress: " + prefix)
 			console.error("Bad ratio change:", prev_ratio, "=>", ratio);
 		}
@@ -55,6 +55,14 @@ function crunch(what, orig, prefixes) {
 	console.error(what, "compression:", ratio, "( without dictionary:" , w.length/orig.length, ")");
 	return [w, pairs.join(get_split())];
 }
+
+function single_quote_json(o) {
+	const j0 = JSON.stringify(o).slice(1,-1).replaceAll('\\"','"');
+	const j1 = j0.replaceAll("'", "\\'");
+	if (j1.length !== j0.length) console.log("single quote count:", j1.length-j0.length, "(escaped)");
+	return "'" + j1 + "'";
+}
+
 
 const clean_html = s => s.replace(/<!--[\s\S]*?-->/g, ''); // remove HTML comments
 const clean_css  = s => s.replace(/\/\*[\s\S]*?\*\//g, ''); // remove CSS comments
@@ -65,4 +73,5 @@ module.exports = {
 	crunch,
 	clean_html,
 	clean_css,
+	single_quote_json,
 };

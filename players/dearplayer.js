@@ -209,7 +209,6 @@ P=(sample_rate, n_channels, n_frames, song_text, main_color)=>{
 	    wave_length = 44+data_length,
 	    WAVE = new Uint8Array(wave_length),
 	    cursor = 0,
-	    wave_url,
 	    wu16 = value => { WAVE[cursor++]=value; WAVE[cursor++]=value>>8; },
 	    wu32 = value => { wu16(value); wu16(value>>16); },
 	    wstr = s => { for (s of s) WAVE[cursor++]=s.charCodeAt(0); }

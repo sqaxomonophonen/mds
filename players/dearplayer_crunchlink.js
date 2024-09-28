@@ -71,10 +71,6 @@ function build(api) {
 		//'.length', // this is too common; handle via outer compressor?
 	]);
 
-	function sqjson(o) {
-		return "'"+JSON.stringify(o).slice(1,-1).replaceAll('\\"','"')+"'";
-	}
-
 	let src = "";
 
 	// XXX I should probably resist the temptation to save a few chars by inlining
@@ -83,7 +79,7 @@ function build(api) {
 	src += "A0=F(`<style>"+css+"</style>`,`"+css_pairs+"`);";
 	src += "A1=F(`"+html+"`,`"+html_pairs+"`);";
 	src += "A2=F(`"+aw+"`,`"+aw_pairs+"`);";
-	src += "eval(F("+sqjson(player)+",`"+player_pairs+"`));";
+	src += "eval(F("+lib.single_quote_json(player)+",`"+player_pairs+"`));";
 
 	return src;
 }
