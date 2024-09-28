@@ -48,7 +48,7 @@ P=(sample_rate, n_channels, n_frames, song_text, main_color)=>{
 			// XXX saving a few chars here thanks to the duality of
 			// .concat(). e.g. if xs=[1,2], then xs.concat(3) and
 			// xs.concat([3]) gives the same result
-			post_worklet_message({c:chunk}); 
+			post_worklet_message({c:chunk});
 		}
 		for (let i = 0; i < chunk.length; i++) {
 			wu16(clampmm(chunk[i],-1,1)*32767 + Math.random()*0.5);
