@@ -30,7 +30,7 @@ P=(sample_rate, n_channels, n_frames, song_text, main_color)=>{
 		let meter = "[";
 		const W=76;
 		for (let i = 0; i < W; i++) {
-			meter += i/W < (n_frames-remaining)/n_frames ? "#" : ".";
+			meter += i/W < (n_frames-remaining)/n_frames ? "#" : ":";
 		}
 		meter += "]";
 		if (meter !== last_meter) {
