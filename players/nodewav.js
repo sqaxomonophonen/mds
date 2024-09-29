@@ -34,7 +34,7 @@ P=(sample_rate, n_channels, n_frames, song_text, main_color)=>{
 		}
 		meter += "]";
 		if (meter !== last_meter) {
-			process.stdout.write("\r" + meter + "\r");
+			process.stdout.write( meter + "\r");
 			last_meter = meter;
 		}
 		for (let i = 0; i < chunk.length; i++) {
