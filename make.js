@@ -125,8 +125,13 @@ let players_text = "";
 	player_map[e.id] = e;
 });
 
-function usage() {
-	process.stdout.write("Usage: " + path.basename(process.argv[1]) + " <song id> <codec> <player>\n");
+const argv = process.argv;
+
+function usage(err) {
+	if (err) console.error(err);
+	process.stdout.write("Usage: " + path.basename(argv[1]) + " <song id> <artifact> ...\n");
+	process.stdout.write("Usage: " + path.basename(argv[1]) + " <song id> html <codec> <player>\n");
+	process.stdout.write("Usage: " + path.basename(argv[1]) + " <song id> js\n");
 	process.stdout.write("Songs:\n");
 	for (let p of fs.readdirSync(".")) {
 		let st = fs.statSync(p);
@@ -143,25 +148,37 @@ function usage() {
 	process.exit(1);
 }
 
-if (process.argv.length < 5) usage();
-const [ arg_song_id, arg_codec, arg_player ] = process.argv.slice(2);
+if (argv.length < 4) usage();
+const arg_song_id = argv[2];
+const command = argv.slice(3);
 
 const song = must_load_song(arg_song_id);
 
-const codec = codec_map[arg_codec];
-const player = player_map[arg_player];
-
-if (!codec) {
-	console.error("No such codec: " + arg_codec);
-	process.exit(1);
-}
-
-if (!player) {
-	console.error("No such player: " + arg_player);
-	process.exit(1);
-}
-
 const read_text = (path) => fs.readFileSync(path, "utf-8");
+
+let codec,player,do_compile,do_html,do_js;
+switch (command[0]) {
+case "html": {
+	if (argv.length !== 6) usage("wrong number of arguments");
+	const arg_codec = argv[4];
+	const arg_player = argv[5];
+	codec = codec_map[arg_codec];
+	player = player_map[arg_player];
+	if (!codec) usage("No such codec: " + arg_codec);
+	if (!player) usage("No such player: " + arg_player);
+	do_compile = true;
+	do_html = true;
+}	break;
+case "js": {
+	if (argv.length !== 4) usage("wrong number of arguments");
+	do_compile = false;
+	do_js = true;
+	player = {
+		source: read_text(player_path("nodewav.js")),
+	};
+}	break;
+default: usage();
+}
 
 function minify(source, opt) {
 	opt = opt || {};
@@ -362,17 +379,25 @@ function resolve(source) {
 }
 
 let song_source = resolve(out.source);
-song_source = compile(song_source);
-console.log(song_source, song_source.length);
+if (do_compile) song_source = compile(song_source);
+//console.log(song_source, song_source.length);
 
-const decoder_source = compile_path(codec.decoder);
 
-const player_crunchlink = require("./" + player.crunchlink);
+let decoder_source;
+if (codec) decoder_source = compile_path(codec.decoder);
 
-const player_src = player_crunchlink.build({
-	read: (filename) => read_text(player_path(filename)),
-	compile: (filename) => compile_path(player_path(filename)),
-});
+let player_source ;
+if (player) {
+	if (player.source) {
+		player_source = player.source;
+	} else if (player.crunchlink) {
+		const player_crunchlink = require("./" + player.crunchlink);
+		player_source = player_crunchlink.build({
+			read: (filename) => read_text(player_path(filename)),
+			compile: (filename) => compile_path(player_path(filename)),
+		});
+	}
+}
 
 function text2rans(stripcc, long_symbols, input) {
 	if (!(1 <= SCALE_BITS && SCALE_BITS <= 16)) throw new Error("invalid scale bits");
@@ -498,149 +523,158 @@ function rr2bin(rr) {
 	return out;
 }
 
-let stage1_source = player_src + song_source;
-const rans = js2rans(stage1_source);
-const rans_bin = rr2bin(rans.rans_ranges_txt);
+let stage1_source = player_source + song_source;
 
-const u8arr_to_str = (u8arr) => Array.from(u8arr).map(x=>String.fromCharCode(x)).join("");
+if (do_html) {
+	const rans = js2rans(stage1_source);
+	const rans_bin = rr2bin(rans.rans_ranges_txt);
 
-function make_bootstrap(n_symbols, sym_freq_pairs) {
-	let strings  = [];
-	let chars = [];
-	for (const pair of sym_freq_pairs) {
-		assert(pair !== null);
-		// if (pair === null) { freqs.push(0); continue; }
-		const [ str, freq ] = pair;
-		if (str.length > 1) {
-			assert(chars.length === 0);
-			strings.push(pair);
-		} else {
-			const idx = str.charCodeAt(0)-32;
-			assert(0 <= idx && idx < (128-1-32));
-			chars[idx] = pair;
+	const u8arr_to_str = (u8arr) => Array.from(u8arr).map(x=>String.fromCharCode(x)).join("");
+
+	function make_bootstrap(n_symbols, sym_freq_pairs) {
+		let strings  = [];
+		let chars = [];
+		for (const pair of sym_freq_pairs) {
+			assert(pair !== null);
+			// if (pair === null) { freqs.push(0); continue; }
+			const [ str, freq ] = pair;
+			if (str.length > 1) {
+				assert(chars.length === 0);
+				strings.push(pair);
+			} else {
+				const idx = str.charCodeAt(0)-32;
+				assert(0 <= idx && idx < (128-1-32));
+				chars[idx] = pair;
+			}
 		}
-	}
 
-	let freqs = [];
-	for (const def of strings) freqs.push(def[1]);
-	for (let i = 0; i < (128-1-32); i++) {
-		const def = chars[i];
-		if (def) {
-			freqs.push(def[1]);
-		} else {
-			freqs.push(0);
+		let freqs = [];
+		for (const def of strings) freqs.push(def[1]);
+		for (let i = 0; i < (128-1-32); i++) {
+			const def = chars[i];
+			if (def) {
+				freqs.push(def[1]);
+			} else {
+				freqs.push(0);
+			}
 		}
+
+		let prelude = new Uint8Array(1<<20);
+		let cursor = 0;
+		for (let freq of freqs) {
+			let v = freq;
+			do {
+				const d = v&0x7f;
+				v = v>>7;
+				let dd = d;
+				if (v) dd |= 0x80;
+				prelude[cursor++] = dd;
+				if (!v) break;
+			} while(v);
+		}
+		prelude = prelude.slice(0,cursor);
+
+		let js = "";
+		const W = (line) => js+=(line+"\n");
+
+		assert(strings.map(x=>x[0]).join("").indexOf(JS_LONG_SYMBOL_SPLITTER) === -1);
+
+		W("eval((_=>{");
+		//W("console.log((_=>{");
+		W("  let v,m,i,c=0,");
+		W("  tbl=[],");
+		W("  strs=\"" + strings.map(x=>x[0]).join(JS_LONG_SYMBOL_SPLITTER) + "\".split(\""+JS_LONG_SYMBOL_SPLITTER+"\"),");
+		W("  ns=strs.length,");
+		W("  n=ns+95,");
+		W("  M=128,");
+		W("  start=[],freq=[]");
+		W("  ;");
+		W("  for(i=0;i<n;i++){");
+		W("    v=0;m=1;");
+		W("    while(1){");
+		W("      let d=Y();");
+		W("      v+=m*(d&127);");
+		W("      if(d<M) break;");
+		W("      m*=M;");
+		W("    }");
+		W("    start[i]=c;");
+		W("    freq[i]=v;");
+		W("    for(m=0;m<v;m++){");
+		W("      tbl[c++]=i;");
+		W("    }");
+		W("  }");
+		W("  c=\"\";");
+		W("  X=X("+SCALE_BITS+",Y);");
+		W("  for(i=0;i<"+n_symbols+";i++){");
+		W("    m = tbl[X()];");
+		W("    c += m<ns ? strs[m] : String.fromCharCode(32+m-ns);");
+		W("    X(start[m],freq[m]);");
+		W("  }");
+		W("  return c;");
+		W("})());");
+
+		console.log("prelude:", prelude.length, "bytes");
+
+		return {
+			prelude: u8arr_to_str(prelude),
+			js: js,
+		};
 	}
 
-	let prelude = new Uint8Array(1<<20);
-	let cursor = 0;
-	for (let freq of freqs) {
-		let v = freq;
-		do {
-			const d = v&0x7f;
-			v = v>>7;
-			let dd = d;
-			if (v) dd |= 0x80;
-			prelude[cursor++] = dd;
-			if (!v) break;
-		} while(v);
+	function bin_to_js_str(input) {
+		let bit_array = [];
+		for (let i0 = 0; i0 < input.length; i0++) {
+			const b = input.charCodeAt(i0);
+			for (let i1 = 0; i1 < 8; i1++) {
+				bit_array.push((b>>i1)&1);
+			}
+		}
+
+		let buffer = new Uint8Array(1<<20);
+		let bit_cursor = 0;
+		let byte_cursor = 0;
+
+		const BASE   = BigInt(codec.base);
+		const DIGITS = BigInt(codec.digits);
+		const BITS   = BigInt(codec.bits);
+
+		while (bit_cursor < bit_array.length) {
+			let VAL = 0n;
+			for (let BIT = 0n; BIT < BITS; BIT++) {
+				if (bit_cursor < bit_array.length && bit_array[bit_cursor]) VAL |= 1n<<BIT;
+				bit_cursor++;
+			}
+			for (let I = 0n; I < DIGITS; I++) {
+				buffer[byte_cursor++] = codec.encode_digit(Number(VAL % BASE));
+				VAL /= BASE;
+			}
+		}
+
+		assert((byte_cursor % codec.digits) === 0);
+		buffer = buffer.slice(0,byte_cursor)
+		console.log(codec.id, input.length, "=>", buffer.length, "( efficiency:", input.length/byte_cursor, ")");
+		return u8arr_to_str(buffer);
 	}
-	prelude = prelude.slice(0,cursor);
 
-	let js = "";
-	const W = (line) => js+=(line+"\n");
+	const bootstrap = make_bootstrap(rans.n_symbols, rans.sym_freq_pairs);
 
-	assert(strings.map(x=>x[0]).join("").indexOf(JS_LONG_SYMBOL_SPLITTER) === -1);
+	let txtish = bin_to_js_str(bootstrap.prelude + rans_bin);
+	let html_source = "";
+	html_source += codec.html_header;
+	html_source += "<script>";
+	html_source += decoder_source;
+	html_source += "Y=Y(\"" + txtish + "\");";
+	html_source += compile_path(codec_path("ransdecoder.js"));
+	html_source += compile(bootstrap.js);
+	html_source += "</script>";
 
-	W("eval((_=>{");
-	//W("console.log((_=>{");
-	W("  let v,m,i,c=0,");
-	W("  tbl=[],");
-	W("  strs=\"" + strings.map(x=>x[0]).join(JS_LONG_SYMBOL_SPLITTER) + "\".split(\""+JS_LONG_SYMBOL_SPLITTER+"\"),");
-	W("  ns=strs.length,");
-	W("  n=ns+95,");
-	W("  M=128,");
-	W("  start=[],freq=[]");
-	W("  ;");
-	W("  for(i=0;i<n;i++){");
-	W("    v=0;m=1;");
-	W("    while(1){");
-	W("      let d=Y();");
-	W("      v+=m*(d&127);");
-	W("      if(d<M) break;");
-	W("      m*=M;");
-	W("    }");
-	W("    start[i]=c;");
-	W("    freq[i]=v;");
-	W("    for(m=0;m<v;m++){");
-	W("      tbl[c++]=i;");
-	W("    }");
-	W("  }");
-	W("  c=\"\";");
-	W("  X=X("+SCALE_BITS+",Y);");
-	W("  for(i=0;i<"+n_symbols+";i++){");
-	W("    m = tbl[X()];");
-	W("    c += m<ns ? strs[m] : String.fromCharCode(32+m-ns);");
-	W("    X(start[m],freq[m]);");
-	W("  }");
-	W("  return c;");
-	W("})());");
-
-	console.log("prelude:", prelude.length, "bytes");
-
-	return {
-		prelude: u8arr_to_str(prelude),
-		js: js,
-	};
+	const html_path = "__build." + arg_song_id + ".html";
+	fs.writeFileSync(html_path, html_source, "binary");
+	console.log("wrote", html_path, html_source.length, "bytes");
 }
 
-function bin_to_js_str(input) {
-	let bit_array = [];
-	for (let i0 = 0; i0 < input.length; i0++) {
-		const b = input.charCodeAt(i0);
-		for (let i1 = 0; i1 < 8; i1++) {
-			bit_array.push((b>>i1)&1);
-		}
-	}
-
-	let buffer = new Uint8Array(1<<20);
-	let bit_cursor = 0;
-	let byte_cursor = 0;
-
-	const BASE   = BigInt(codec.base);
-	const DIGITS = BigInt(codec.digits);
-	const BITS   = BigInt(codec.bits);
-
-	while (bit_cursor < bit_array.length) {
-		let VAL = 0n;
-		for (let BIT = 0n; BIT < BITS; BIT++) {
-			if (bit_cursor < bit_array.length && bit_array[bit_cursor]) VAL |= 1n<<BIT;
-			bit_cursor++;
-		}
-		for (let I = 0n; I < DIGITS; I++) {
-			buffer[byte_cursor++] = codec.encode_digit(Number(VAL % BASE));
-			VAL /= BASE;
-		}
-	}
-
-	assert((byte_cursor % codec.digits) === 0);
-	buffer = buffer.slice(0,byte_cursor)
-	console.log(codec.id, input.length, "=>", buffer.length, "( efficiency:", input.length/byte_cursor, ")");
-	return u8arr_to_str(buffer);
+if (do_js) {
+	const path = "__js." + arg_song_id + ".js";
+	fs.writeFileSync(path, stage1_source, "utf-8");
+	console.log("wrote", path, stage1_source.length, "bytes");
 }
-
-const bootstrap = make_bootstrap(rans.n_symbols, rans.sym_freq_pairs);
-
-let txtish = bin_to_js_str(bootstrap.prelude + rans_bin);
-let html_source = "";
-html_source += codec.html_header;
-html_source += "<script>";
-html_source += decoder_source;
-html_source += "Y=Y(\"" + txtish + "\");";
-html_source += compile_path(codec_path("ransdecoder.js"));
-html_source += compile(bootstrap.js);
-html_source += "</script>";
-
-const html_path = "__build." + arg_song_id + ".html";
-fs.writeFileSync(html_path, html_source, "binary");
-console.log("wrote", html_path, html_source.length, "bytes");
