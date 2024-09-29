@@ -231,6 +231,10 @@ const i2id = (() => {
 
 const i2Zid = (index) => "Z"+i2id(index);
 
+// XXX I remove JS comments because the "@-resolver" is really dumb and also
+// resolves references inside comments, e.g. it imports hexwave.js if it sees
+// @KIT(hexwave) inside a comment. this isn't entirely ideal when debugging and
+// looking at non-minified code.
 const strip_js_comments = (src) => src.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
 
 function enumerate_tags(source) {
