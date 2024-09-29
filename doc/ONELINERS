@@ -1,0 +1,48 @@
+
+PWM+filter
+s=Math.tanh(FILTER*(PWMMOD+Math.sin(t*FREQ)))
+
+
+kicks
+s=Math.tanh(((0.7-t)**2)*5*Math.sin(t*200 + t*(1500/(1+t*30))))
+s=Math.tanh((((0.5-t)/0.5)**2)*3*Math.sin(t*200 + t*(2500/(1+t*60))))
+s=Math.tanh((((0.4-t)/0.4)**2)*3*Math.sin(t*250 + t*(4000/(1+t*80))))
+
+
+s=Math.tanh(((0.3-t)**2)*40*Math.sin(t*250 + t*(4000/(1+t*80)))) + (Math.random()-0.5)/(t*400)
+
++snare?
+s=Math.tanh(((0.3-t)**2)*40*Math.sin(Math.random()+t*250 + t*(4000/(1+t*80))))
+s=Math.tanh(((0.3-t)**2)*40*Math.sin(Math.random()*(0.3-t)+t*250 + t*(4000/(1+t*80))))
+s=Math.tanh(((0.3-t)**2)*40*Math.sin((Math.random()*(0.3-t)/0.3)**5+t*250 + t*(4000/(1+t*80))))
+s=Math.tanh((((0.4-t)/0.4)**2)*5*Math.sin((Math.random()*(0.4-t)/0.4)**20+t*250 + t*(4000/(1+t*80))))
+
+
+
+808-style hihats (from fourier series)
+
+K=2*Math.PI,S=Math.sin,v0=(S(t*K*204*10)+S(t*K*204*11)+S(t*K*204*12)+S(t*K*204*13)),v1=(S(t*K*298*10)+S(t*K*298*11)+S(t*K*298*12)+S(t*K*298*13)),v2=(S(t*K*366*10)+S(t*K*366*11)+S(t*K*366*12)+S(t*K*366*13)),v3=(S(t*K*515*10)+S(t*K*515*11)+S(t*K*515*12)+S(t*K*515*13)),v4=(S(t*K*540*10)+S(t*K*540*11)+S(t*K*540*12)+S(t*K*540*13)),v5=(S(t*K*800*10)+S(t*K*800*11)+S(t*K*800*12)+S(t*K*800*13)),s=Math.tanh((v0+v1+v2+v3+v4+v5)*(0.5-t))
+
+K=2*Math.PI,V=(hz,i0,n)=>{let a=0;for(let i=i0;i<(i0+n);i++){a+=Math.sin(t*K*hz*i)/n;};return a;},I0=16,N=10,s0=V(204,I0,N)+V(298,I0,N)+V(366,I0,N)+V(515,I0,N)+V(540,I0,N)+V(800,I0,N),s=Math.tanh(1*s0)
+K=2*Math.PI,V=(hz,i0,n)=>{let a=0;for(let i=i0;i<(i0+n)&&(hz*i)<22000;i++){a+=Math.sin(t*K*hz*i)/n;};return a;},I0=16,N=20,s0=V(204,I0,N)+V(298,I0,N)+V(366,I0,N)+V(515,I0,N)+V(540,I0,N)+V(800,I0,N),s=s0/((0.6+t*20)**2)
+
+v0=(S(t*K*204*10)+S(t*K*204*11)+S(t*K*204*12)+S(t*K*204*13)),v1=(S(t*K*298*10)+S(t*K*298*11)+S(t*K*298*12)+S(t*K*298*13)),v2=(S(t*K*366*10)+S(t*K*366*11)+S(t*K*366*12)+S(t*K*366*13)),v3=(S(t*K*515*10)+S(t*K*515*11)+S(t*K*515*12)+S(t*K*515*13)),v4=(S(t*K*540*10)+S(t*K*540*11)+S(t*K*540*12)+S(t*K*540*13)),v5=(S(t*K*800*10)+S(t*K*800*11)+S(t*K*800*12)+S(t*K*800*13)),s=Math.tanh((v0+v1+v2+v3+v4+v5)*(0.5-t))
+
+
+K=2*Math.PI,V=(hz,i0,n)=>{let a=0;for(let i=i0;i<(i0+n)&&(hz*i)<22000;i++){a+=Math.sin(t*K*hz*i)/n;};return a;},I0=10,N=20,s0=V(504,I0,N)+V(598,I0,N)+V(566,I0,N)+V(615,I0,N)+V(640,I0,N)+V(1000,I0,N),s=Math.tanh(s0/((0.5+t*15)**3))
+
+K=2*Math.PI,V=(hz,i0,n)=>{let a=0;for(let i=i0;i<(i0+n)&&(hz*i)<22000;i++){a+=Math.sin(t*K*hz*i)/n;};return a;},I0=10,N=20,s0=V(504,I0,N)+V(598,I0,N)+V(566,I0,N)+V(615,I0,N)+V(640,I0,N)+V(1000,I0,N)+V(1200,I0,N)+V(1500,I0,N),s=Math.tanh(s0/((0.6+t*20)**3))
+
+
+K=2*Math.PI,V=(hz,i0,n)=>{let a=0;for(let i=i0;i<(i0+n)&&(hz*i)<22000;i++){a+=Math.sin(t*K*hz*i)/n;};return a;},I0=10,N=20,s0=V(500,I0,N)+V(510,I0,N)+V(520,I0,N)+V(530,I0,N)+V(540,I0,N)+V(560,I0,N)+V(570,I0,N)+V(580,I0,N),s=Math.tanh(s0/((0.6+t*20)**3))
+
+lower:
+K=2*Math.PI,V=(hz,i0,n)=>{let a=0;for(let i=i0;i<(i0+n)&&(hz*i)<22000;i++){a+=Math.sin(t*K*hz*i)/n;};return a;},I0=10,N=20,s0=V(300,I0,N)+V(310,I0,N)+V(320,I0,N)+V(330,I0,N)+V(340,I0,N)+V(360,I0,N)+V(370,I0,N)+V(380,I0,N),s=Math.tanh(s0/((0.6+t*20)**3))
+
+
+
+XXX should be only odd harmonies:
+K=2*Math.PI,V=(hz,i0,n)=>{let a=0;for(let i=i0;i<(i0+n)&&(hz*i)<22000;i+=2){a+=Math.sin(t*K*hz*i)/n;};return a;},I0=10,N=20,s0=V(504,I0,N)+V(598,I0,N)+V(566,I0,N)+V(615,I0,N)+V(640,I0,N)+V(1000,I0,N)+V(1200,I0,N)+V(1500,I0,N),s=Math.tanh(s0/((0.6+t*20)**3))
+
+
+K=2*Math.PI,V=(hz,i0,n)=>{let a=0;for(let i=i0;i<(i0+n)&&(hz*i)<22000;i+=2){a+=Math.sin(t*K*hz*i)/n;};return a;},I0=10,N=20,s0=V(300,I0,N)+V(310,I0,N)+V(320,I0,N)+V(330,I0,N)+V(340,I0,N)+V(360,I0,N)+V(370,I0,N)+V(380,I0,N),s=Math.tanh(s0/((0.6+t*20)**3))

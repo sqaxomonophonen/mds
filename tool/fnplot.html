@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<style>
+#error {
+	color: red;
+}
+</style>
+<script>
+window.onload = () => {
+	let ctx;
+	const get_function = () => eval("(t)=>{let "+expr.value+";return s;}");
+	const get_values = () => {
+		let values = {};
+		for (let x of document.getElementsByTagName("input")) {
+			values[x.id] = x.value;
+		}
+		for (let f of ["width","height"]) values[f] = parseInt(values[f],10);
+		for (let f of ["t"]) values[f] = parseFloat(values[f]);
+		return values;
+	};
+	const refresh = () => {
+
+		const succ = (fn) => {
+			try {
+				fn();
+				error.innerHTML = "";
+				return true;
+			} catch (e) {
+				error.innerHTML = e;
+				return false;
+			}
+		};
+
+
+		let values;
+		if (!succ(_=>{
+			values = get_values();
+		})) return;
+
+		const W = values.width;
+		const H = values.height;
+
+		let fn = null;
+		if (!succ(_=>{
+			fn = get_function();
+		})) return;
+		let points=[];
+		if (!succ(_=>{
+			for (let sx = 0; sx < W; sx++) {
+				let t = (sx/W) * values.t;
+				let s = fn(t);
+				s = Math.min(1,Math.max(-1,s));
+				let sy = H - ((s+1)/2)*H;
+				points.push([sx,sy]);
+			}
+		})) return;
+		
+
+		canvas.width = W;
+		canvas.height = H;
+
+		if (!ctx) ctx = canvas.getContext("2d");
+
+		ctx.fillStyle = 'black';
+		ctx.fillRect(0, 0, W, H);
+
+		ctx.beginPath();
+		for (let i=0; i<points.length; i++) {
+			const p = points[i];
+			if (i==0) {
+				ctx.moveTo(p[0],p[1])
+			} else {
+				ctx.lineTo(p[0],p[1])
+			}
+		}
+		ctx.lineWidth = 1.5;
+		ctx.strokeStyle = "white";
+		ctx.stroke();
+
+		const sample_rate = 44100;
+		const n_channels = 1;
+		const n_frames = Math.floor(sample_rate * values.t);
+		const data_length = n_frames * n_channels * 2;
+		const wave_length = 44+data_length;
+		const clampmm = (x,min,max)=>Math.min(max,Math.max(min,x));
+
+		let cursor = 0;
+		let WAVE = new Uint8Array(wave_length);
+		const wu16 = value => { WAVE[cursor++]=value; WAVE[cursor++]=value>>8; };
+		const wu32 = value => { wu16(value); wu16(value>>16); };
+		const wstr = s => { for (s of s) WAVE[cursor++]=s.charCodeAt(0); };
+
+		wstr("RIFF");
+		wu32(data_length+36);
+		wstr("WAVEfmt ");
+		wu32(16);
+		wu16(1);
+		wu16(n_channels);
+		wu32(sample_rate);
+		wu32(sample_rate * n_channels * 2);
+		wu16(n_channels * 2);
+		wu16(16);
+		wstr("data");
+		wu32(data_length);
+
+		for (let i = 0; i < n_frames; i++) {
+			let s = fn(i/sample_rate);
+			wu16(clampmm(s,-1,1)*32767 + Math.random()*0.5);
+		}
+		const url = URL.createObjectURL(new File([WAVE],"curve.wav",{'type':'audio/wav'}));
+		audio.src = url;
+
+	};
+	for (let x of document.getElementsByTagName("input")) x.addEventListener("change", refresh);
+	refresh();
+};
+</script>
+<body>
+<label>W: <input type="number" id="width" value="1000" style="width:6em;" step="10"/></label>
+<label>H: <input type="number" id="height" value="300" style="width:6em;" step="10"/></label>
+<label>T: <input type="number" id="t" value="1" style="width:5em;" step="0.1"/></label>
+<br/>
+<label>let <input style="width:50em;" id="expr" value="s=Math.sin(50*t)"/></label>
+<br/>
+<div id="error"></div>
+<br/>
+<canvas id="canvas"></canvas>
+<br/>
+<audio id="audio" controls></audio>
+<br/>
+</body>
+</html>
