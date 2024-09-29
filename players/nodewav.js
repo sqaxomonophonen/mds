@@ -25,7 +25,18 @@ P=(sample_rate, n_channels, n_frames, song_text, main_color)=>{
 	wstr("data");
 	wu32(data_length);
 
+	let last_meter;
 	return (chunk) => {
+		let meter = "[";
+		const W=76;
+		for (let i = 0; i < W; i++) {
+			meter += i/W < (n_frames-remaining)/n_frames ? "#" : ".";
+		}
+		meter += "]";
+		if (meter !== last_meter) {
+			process.stdout.write("\r" + meter + "\r");
+			last_meter = meter;
+		}
 		for (let i = 0; i < chunk.length; i++) {
 			wu16(clampmm(chunk[i],-1,1)*32767 + Math.random()*0.5);
 		}
@@ -33,7 +44,7 @@ P=(sample_rate, n_channels, n_frames, song_text, main_color)=>{
 		if (remaining <= 0) {
 			const filename = "__render."+song_text.replaceAll(" ","_")+".wav";
 			fs.writeFileSync(filename, WAVE, "binary");
-			console.log("Wrote:", filename);
+			console.log("\nWrote:", filename, WAVE.length, "bytes");
 			process.exit(0);
 		}
 	};
