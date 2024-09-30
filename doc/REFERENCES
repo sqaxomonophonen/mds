@@ -1,3 +1,8 @@
 
 audio interpolators (including source code) for resampling:
 http://www.alternatievewiskunde.nl/QED/deip.pdf
+
+
+https://gitlab.xiph.org/xiph/postfish/-/blob/master/freeverb.c
+https://gitlab.xiph.org/xiph/postfish/-/blob/master/freeverb.c
+(public domain)
