@@ -1,4 +1,5 @@
 fs=require('fs');
+const t0 = Date.now();
 P=(sample_rate, n_channels, n_frames, song_text, main_color)=>{
 	const data_length = n_frames * n_channels * 2;
 	const wave_length = 44+data_length;
@@ -44,7 +45,7 @@ P=(sample_rate, n_channels, n_frames, song_text, main_color)=>{
 		if (remaining <= 0) {
 			const filename = "__render."+song_text.replaceAll(" ","_")+".wav";
 			fs.writeFileSync(filename, WAVE, "binary");
-			console.log("\nWrote:", filename, WAVE.length, "bytes");
+			console.log("\nWrote:", filename, WAVE.length, "bytes in", (Date.now()-t0)/1000, "seconds");
 			process.exit(0);
 		}
 	};
