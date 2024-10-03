@@ -13,7 +13,7 @@
 	let B = new Float32Array(CHUNK_FRAMES);
 
 	const accbits = 24;
-	let inc = 440*(1<<accbits) / @DEF(SR);
+	let inc = (110*(1<<accbits) / (oversample_ratio * @DEF(SR)))|0;
 	let acc = 0;
 
 	X = () => {
@@ -23,6 +23,7 @@
 				A[i] = ((acc / (1<<accbits)) - 0.5) * 2;
 				acc = (acc + inc) & ((1<<accbits)-1);
 			}
+			inc++;
 			downsampler(A,B);
 			let xs = new Float32Array(CHUNK_FRAMES*N_CHANNELS);
 			for(let i = 0; i < CHUNK_FRAMES; i++) {

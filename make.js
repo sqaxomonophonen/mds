@@ -187,8 +187,14 @@ function minify(source, opt) {
 		compress: {},
 	};
 	if (opt.expression) mopts.expression = true;
-	const s = ujs.minify(source, mopts).code;
-	assert(s !== undefined, "BAD SOURCE: " + source);
+	const o = ujs.minify(source, mopts)
+	const s = o.code;
+	if (s === undefined) {
+		console.log(o);
+		console.log(source);
+		console.error("ERR");
+		process.exit(1);
+	}
 	return s;
 }
 
