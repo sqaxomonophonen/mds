@@ -18,7 +18,8 @@
 
 	//let filter = @KIT(moogvcf2)();
 	//let filter = @KIT(moogvcf1)();
-	let filter = @KIT(ms20vcf)();
+	//let filter = @KIT(ms20vcf)();
+	let filter = @KIT(moogvcf3)();
 
 	X = () => {
 		for (let n = 0; n < 50; n++) {
@@ -31,7 +32,8 @@
 			//filter(A,(N_CHUNKS-remaining)/N_CHUNKS,3.5);
 			//filter(A,(N_CHUNKS-remaining)/N_CHUNKS,0.8,0);
 			//let AA = new Float32Array(A.length);
-			filter(A,0,(N_CHUNKS-remaining)/N_CHUNKS,0.99);
+			//filter(A,0,(N_CHUNKS-remaining)/N_CHUNKS,0.99);
+			filter(A,(N_CHUNKS-remaining)/N_CHUNKS,0.995);
 			downsampler(A,B);
 			let xs = new Float32Array(CHUNK_FRAMES*N_CHANNELS);
 			for(let i = 0; i < CHUNK_FRAMES; i++) {
