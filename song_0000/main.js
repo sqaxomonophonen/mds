@@ -13,17 +13,22 @@
 	let B = new Float32Array(CHUNK_FRAMES);
 
 	const accbits = 24;
-	let inc = (110*(1<<accbits) / (oversample_ratio * @DEF(SR)))|0;
+	let inc = (50*(1<<accbits) / (oversample_ratio * @DEF(SR)))|0;
 	let acc = 0;
+
+	//let filter = @KIT(moogvcf2)();
+	let filter = @KIT(moogvcf1)();
 
 	X = () => {
 		for (let n = 0; n < 50; n++) {
 			if (remaining-- <= 0) return;
 			for (let i = 0; i < A.length; i++) {
-				A[i] = ((acc / (1<<accbits)) - 0.5) * 2;
+				A[i] = ((acc / (1<<accbits)) - 0.5) * 1.8;
 				acc = (acc + inc) & ((1<<accbits)-1);
 			}
 			inc++;
+			//filter(A,(N_CHUNKS-remaining)/N_CHUNKS,3.5);
+			filter(A,(N_CHUNKS-remaining)/N_CHUNKS,0.8,0);
 			downsampler(A,B);
 			let xs = new Float32Array(CHUNK_FRAMES*N_CHANNELS);
 			for(let i = 0; i < CHUNK_FRAMES; i++) {
